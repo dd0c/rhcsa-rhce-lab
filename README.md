@@ -1,4 +1,4 @@
-# rhcsa-rhce-lab
+# rhel7-rhcsa-rhce-lab
 RHEL7 RHCSA RHCE lab environment
 
 RHCSA7 Objectives
