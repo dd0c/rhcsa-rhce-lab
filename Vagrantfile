@@ -22,8 +22,8 @@ Vagrant.configure("2") do |config|
 		node.vm.network "private_network", ip: "172.16.20.50"
 
 		# provider settings for labipa
-		node.vm.provider "vagrant-libvirt" do |vbox|
-			vbox.customize [
+		node.vm.provider "vagrant-libvirt" do |libvirt|
+			libvirt.customize [
 				"modifyvm", :id,
 				"--memory", 2048,
 				"--cpus", 1,
@@ -35,53 +35,49 @@ Vagrant.configure("2") do |config|
 		node.vm.provision "shell", path: "bootstrap_labipa.sh"
 		node.vm.provision "file", source: "./ansible", destination: "$HOME/ansible"
 	end
+	(1..2).each do |i|
+		config.vm.define "system#{i}" do |node|
+			node.vm.box = "centos/7"
+			node.vm.hostname = "system#{i}.example.com"
+			node.vm.network "private_network", ip: "172.16.20.5#{i}
 
-  # Create a forwarded port mapping which allows access to a specific port
-  # within the machine from a port on the host machine. In the example below,
-  # accessing "localhost:8080" will access port 80 on the guest machine.
-  # NOTE: This will enable public access to the opened port
-  # config.vm.network "forwarded_port", guest: 80, host: 8080
+			# provider settings for system1 and system2
+			node.vm.provider "vagrant-libvirt" do |libvirt|
+				libvirt.customize [
+					"modifyvm", :id,
+					"--memory", 1024,
+					"--cpus", 1,
+					"--name", "system#{i}"
+				]
+				line = `libvirtManage list systemproperties | grep "Default machine folder"`
+				lv_machine_folder = line.split(':')[1].strip()
+				disk_name = "disk2.vmdk"
+				disk = File.join(vb_machine_folder, "system#{i}", disk_name)
 
-  # Create a forwarded port mapping which allows access to a specific port
-  # within the machine from a port on the host machine and only allow access
-  # via 127.0.0.1 to disable public access
-  # config.vm.network "forwarded_port", guest: 80, host: 8080, host_ip: "127.0.0.1"
+				unless File.exist?(disk)
+					libvirt.customize [
+						"createhd",
+						"--filename", disk,
+						"--variant", "Fixed",
+						"--format", "vmdk",
+						"--size", 1 * 1024,
+					]
+					libvirt.customize [
+						"storagectl", :id,
+						"--name", "SATA Controller",
+						"--add", "sata",
+					]
+				end
 
-  # Create a private network, which allows host-only access to the machine
-  # using a specific IP.
-  # config.vm.network "private_network", ip: "192.168.33.10"
-
-  # Create a public network, which generally matched to bridged network.
-  # Bridged networks make the machine appear as another physical device on
-  # your network.
-  # config.vm.network "public_network"
-
-  # Share an additional folder to the guest VM. The first argument is
-  # the path on the host to the actual folder. The second argument is
-  # the path on the guest to mount the folder. And the optional third
-  # argument is a set of non-required options.
-  # config.vm.synced_folder "../data", "/vagrant_data"
-
-  # Provider-specific configuration so you can fine-tune various
-  # backing providers for Vagrant. These expose provider-specific options.
-  # Example for VirtualBox:
-  #
-  # config.vm.provider "virtualbox" do |vb|
-  #   # Display the VirtualBox GUI when booting the machine
-  #   vb.gui = true
-  #
-  #   # Customize the amount of memory on the VM:
-  #   vb.memory = "1024"
-  # end
-  #
-  # View the documentation for the provider you are using for more
-  # information on available options.
-
-  # Enable provisioning with a shell script. Additional provisioners such as
-  # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
-  # documentation for more information about their specific syntax and use.
-  # config.vm.provision "shell", inline: <<-SHELL
-  #   apt-get update
-  #   apt-get install -y apache2
-  # SHELL
+				libvirt.customize [
+					"storageattach", :id,
+					"--storagectl", "SATA Controller",
+					"--port", 2,
+					"--device", 0,
+					"--type", "hdd",
+					"--medium", disk,
+				]
+			end
+		end
+	end
 end
