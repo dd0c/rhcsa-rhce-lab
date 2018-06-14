@@ -39,7 +39,7 @@ Vagrant.configure("2") do |config|
 		config.vm.define "system#{i}" do |node|
 			node.vm.box = "centos/7"
 			node.vm.hostname = "system#{i}.example.com"
-			node.vm.network "private_network", ip: "172.16.20.5#{i}
+			node.vm.network "private_network", ip: "172.16.20.5#{i}"
 
 			# provider settings for system1 and system2
 			node.vm.provider "vagrant-libvirt" do |libvirt|
