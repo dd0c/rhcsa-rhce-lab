@@ -11,10 +11,6 @@
 # changelog:
 # - v1.0     initial version
 
-$script = <<-SCRIPT
-sudo yum install -y ansible
-SCRIPT
-
 Vagrant.configure("2") do |config|
 	ENV["LC_ALL"] = "en_US.UTF-8"
 	ENV["LANG"] = "en_US.UTF-8"
@@ -36,11 +32,8 @@ Vagrant.configure("2") do |config|
 		end
 
 		# provisioning for labipa
-		node.vm.provision "shell", inline: $script
-		node.vm.provision "ansible_local" do |ansible|
-			ansible.playbook = "provision/labipa.yml"
-			ansible.host_vars = { "labipa" => { "private_ipv4_address" => "172.16.20.50" }}
-		end
+		node.vm.provision "shell", path: "bootstrap_labipa.sh"
+		node.vm.provision "file", source: "./ansible", destination: "$HOME/ansible"
 	end
 
   # Create a forwarded port mapping which allows access to a specific port
