@@ -35,6 +35,7 @@ Vagrant.configure("2") do |config|
 		node.vm.provision "shell", path: "bootstrap_labipa.sh"
 		node.vm.provision "file", source: "./ansible", destination: "$HOME/ansible"
 	end
+
 	(1..2).each do |i|
 		config.vm.define "system#{i}" do |node|
 			node.vm.box = "centos/7"
@@ -49,35 +50,22 @@ Vagrant.configure("2") do |config|
 					"--cpus", 1,
 					"--name", "system#{i}"
 				]
-				line = `libvirtManage list systemproperties | grep "Default machine folder"`
-				lv_machine_folder = line.split(':')[1].strip()
-				disk_name = "disk2.vmdk"
-				disk = File.join(vb_machine_folder, "system#{i}", disk_name)
-
-				unless File.exist?(disk)
-					libvirt.customize [
-						"createhd",
-						"--filename", disk,
-						"--variant", "Fixed",
-						"--format", "vmdk",
-						"--size", 1 * 1024,
-					]
-					libvirt.customize [
-						"storagectl", :id,
-						"--name", "SATA Controller",
-						"--add", "sata",
-					]
-				end
-
 				libvirt.customize [
-					"storageattach", :id,
-					"--storagectl", "SATA Controller",
-					"--port", 2,
-					"--device", 0,
-					"--type", "hdd",
-					"--medium", disk,
+					"createhd"
+					"--filename", file_to_disk,
+					"--variant", "Fixed",
+					"--format", "qcow",
+					"--size", 1 * 1024,
 				]
 			end
+			libvirt.customize [
+				"storageattach", :id,
+				"--storagectl", "SATA Controller",
+				"--port", 2,
+				"--device", 0,
+				"--type", "hdd",
+				"--medium", disk,
+			]
 		end
 	end
 end
