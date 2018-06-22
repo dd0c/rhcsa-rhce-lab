@@ -62,7 +62,7 @@ Vagrant.configure("2") do |config|
 						"--format", "qcow2",
 						"--size", 2 * 1024
 					]
-                                        vbox.customize [
+                                        libvirt.customize [
                                                 "storagectl", :id,
                                                 "--name", "SATA Controller",
                                                 "--add", "sata",
