@@ -16,66 +16,30 @@ Vagrant.configure("2") do |config|
 	ENV["LANG"] = "en_US.UTF-8"
 
 	# configure labipa server
-	config.vm.define "labipa" do |node|
+	config.vm.define :labipa do |node|
 		node.vm.box = "centos/7"
 		node.vm.hostname = "labipa.example.com"
 		node.vm.network "private_network", ip: "172.16.20.50"
 
-		# provider settings for labipa
-		node.vm.provider "vagrant-libvirt" do |libvirt|
-			libvirt.customize [
-				"modifyvm", :id,
-				"--memory", 2048,
-				"--cpus", 1,
-				"--name", "labipa",
-			]
+		node.vm.provider :libvirt do |libvirt|
+			libvirt.memory = 2048
+			libvirt.cpus = 1
 		end
-
-		# provisioning for labipa
 		node.vm.provision "shell", path: "bootstrap_labipa.sh"
 		node.vm.provision "file", source: "./ansible", destination: "$HOME/ansible"
 	end
 
+	# configure client/server nodes
 	(1..2).each do |i|
 		config.vm.define "system#{i}" do |node|
 			node.vm.box = "centos/7"
 			node.vm.hostname = "system#{i}.example.com"
 			node.vm.network "private_network", ip: "172.16.20.5#{i}"
 
-			# provider settings for system1 and system2
-			node.vm.provider "vagrant-libvirt" do |libvirt|
-				libvirt.customize [
-					"modifyvm", :id,
-					"--memory", 1024,
-					"--cpus", 1,
-					"--name", "system#{i}"
-				]
-
-				disk_directory = "/var/lib/libvirt/images/"
-				disk_name = "disk2.img"
-				disk = File.join(disk_directory, "system#{i}", disk_name)
-				unless File.exist?(disk)
-					libvirt.customize [
-						"createhd",
-						"--filename", disk,
-						"--variant", "Fixed",
-						"--format", "qcow2",
-						"--size", 2 * 1024
-					]
-                                        libvirt.customize [
-                                                "storagectl", :id,
-                                                "--name", "SATA Controller",
-                                                "--add", "sata",
-                                        ]
-				end
-				libvirt.customize [
-					"storageattach", :id,
-					"--storagectl", "SATA Controller",
-					"--port", 2,
-					"--device", 0,
-					"--type", "hdd",
-					"--medium", disk
-				]
+			node.vm.provider :libvirt do |libvirt|
+				libvirt.memory = 1024
+				libvirt.cpus = 1
+				libvirt.storage :file, :size => '1G'
 			end
 		end
 	end
