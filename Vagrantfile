@@ -10,7 +10,8 @@
 #
 # changelog:
 # - v1.0     initial version
-# - v1.1     
+# - v1.1    
+#
 
 Vagrant.configure("2") do |config|
 	ENV["LC_ALL"] = "en_US.UTF-8"
