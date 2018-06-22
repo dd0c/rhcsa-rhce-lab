@@ -50,21 +50,23 @@ Vagrant.configure("2") do |config|
 					"--cpus", 1,
 					"--name", "system#{i}"
 				]
-#				libvirt.customize [
-#					"createhd",
-#					"--filename", file_to_disk,
-#					"--variant", "Fixed",
-#					"--format", "qcow",
-#					"--size", 1 * 1024
-#				]
-#				libvirt.customize [
-#					"storageattach", :id,
-#					"--storagectl", "SATA Controller",
-#					"--port", 2,
-#					"--device", 0,
-#					"--type", "hdd",
-#					"--medium", disk
-#				]
+				unless File.exist?("disk2")
+					libvirt.customize [
+						"createhd",
+						"--filename", "disk2",
+						"--variant", "Fixed",
+						"--format", "qcow",
+						"--size", 2 * 1024
+					]
+				end
+				libvirt.customize [
+					"storageattach", :id,
+					"--storagectl", "SATA Controller",
+					"--port", 2,
+					"--device", 0,
+					"--type", "hdd",
+					"--medium", "disk2"
+				]
 			end
 		end
 	end
