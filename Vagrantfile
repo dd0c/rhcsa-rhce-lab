@@ -50,14 +50,23 @@ Vagrant.configure("2") do |config|
 					"--cpus", 1,
 					"--name", "system#{i}"
 				]
-				unless File.exist?("disk2")
+
+				disk_directory = "/var/lib/libvirt/images/"
+				disk_name = "disk2.img"
+				disk = File.join(disk_directory, "system#{i}", disk_name)
+				unless File.exist?(disk)
 					libvirt.customize [
 						"createhd",
-						"--filename", "disk2",
+						"--filename", disk,
 						"--variant", "Fixed",
-						"--format", "qcow",
+						"--format", "qcow2",
 						"--size", 2 * 1024
 					]
+                                        vbox.customize [
+                                                "storagectl", :id,
+                                                "--name", "SATA Controller",
+                                                "--add", "sata",
+                                        ]
 				end
 				libvirt.customize [
 					"storageattach", :id,
@@ -65,7 +74,7 @@ Vagrant.configure("2") do |config|
 					"--port", 2,
 					"--device", 0,
 					"--type", "hdd",
-					"--medium", "disk2"
+					"--medium", disk
 				]
 			end
 		end
